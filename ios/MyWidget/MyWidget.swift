@@ -9,48 +9,54 @@ import WidgetKit
 import SwiftUI
 
 struct Provider: AppIntentTimelineProvider {
+    // Add this method to read widget data from shared UserDefaults
+    private func getWidgetData() -> String {
+        let sharedDefaults = UserDefaults(suiteName: "group.com.xside.appWidgets")
+        return sharedDefaults?.string(forKey: "widgetData") ?? "Default Widget Data"
+    }
+    
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), widgetData: "Placeholder Data")
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
+        SimpleEntry(date: Date(), configuration: configuration, widgetData: getWidgetData())
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         var entries: [SimpleEntry] = []
-
+        let widgetData = getWidgetData()
+        
         // Generate a timeline consisting of five entries an hour apart, starting from the current date.
         let currentDate = Date()
         for hourOffset in 0 ..< 5 {
             let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
+            let entry = SimpleEntry(date: entryDate, configuration: configuration, widgetData: widgetData)
             entries.append(entry)
         }
 
         return Timeline(entries: entries, policy: .atEnd)
     }
-
-//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
 }
 
 struct SimpleEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
+    let widgetData: String // Add this property
 }
 
-struct MyWidgetEntryView : View {
+struct MyWidgetEntryView: View {
     var entry: Provider.Entry
 
     var body: some View {
         VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
+            Text(entry.widgetData)
+                .padding()
+            
+            Spacer()
+            
+            Text("Updated: \(entry.date, style: .time)")
+                .font(.caption)
         }
     }
 }
@@ -83,6 +89,6 @@ extension ConfigurationAppIntent {
 #Preview(as: .systemSmall) {
     MyWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
+    SimpleEntry(date: .now, configuration: .smiley, widgetData: "Sample Data 1")
+    SimpleEntry(date: .now, configuration: .starEyes, widgetData: "Sample Data 2")
 }
